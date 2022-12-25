@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reed.Tests", "Reed.Tests\Reed.Tests.csproj", "{8466CA34-32A3-4B3B-BF66-50254B221150}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reed.Generators", "Reed.Generators\Reed.Generators.csproj", "{34E0733C-B9A5-433D-9587-226B59466072}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reed", "Reed\Reed.csproj", "{66CC5CD3-D6FA-4E20-9989-673AFE23F4A7}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8466CA34-32A3-4B3B-BF66-50254B221150}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8466CA34-32A3-4B3B-BF66-50254B221150}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8466CA34-32A3-4B3B-BF66-50254B221150}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8466CA34-32A3-4B3B-BF66-50254B221150}.Release|Any CPU.Build.0 = Release|Any CPU
+		{34E0733C-B9A5-433D-9587-226B59466072}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{34E0733C-B9A5-433D-9587-226B59466072}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{34E0733C-B9A5-433D-9587-226B59466072}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{34E0733C-B9A5-433D-9587-226B59466072}.Release|Any CPU.Build.0 = Release|Any CPU
+		{66CC5CD3-D6FA-4E20-9989-673AFE23F4A7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{66CC5CD3-D6FA-4E20-9989-673AFE23F4A7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{66CC5CD3-D6FA-4E20-9989-673AFE23F4A7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{66CC5CD3-D6FA-4E20-9989-673AFE23F4A7}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
