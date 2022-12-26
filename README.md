@@ -21,3 +21,13 @@ The idea behind **Reed** is to create a resiliency framework based on source gen
 ## Status
 
 For now this is just a proof of concept ;) 
+
+## Ideas
+
+- [ ] Custom method names
+- [ ] ExceptionHandling
+- [ ] Circuit breaker (lock-free...)
+- [ ] Optimistic timeout
+- [ ] Pessimistic timeout
+- [ ] Pluggable callback interfaces over unitary policies (eg to monitor circuit breaker)
+- [ ] Benchmark against polly
