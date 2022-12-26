@@ -21,7 +21,15 @@ public class ResilientGenerator : ISourceGenerator
         MySyntaxReceiver syntaxReceiver = (MySyntaxReceiver)context.SyntaxReceiver;
 
         // get the recorded user class
-        ClassDeclarationSyntax userClass = syntaxReceiver.ClassToAugment;
+        MethodDeclarationSyntax userMethod = syntaxReceiver.MethodToAugment;
+        if (userMethod is null)
+        {
+            // if we didn't find the user class, there is nothing to do
+            return;
+        }
+        
+        ClassDeclarationSyntax userClass = userMethod.Parent as ClassDeclarationSyntax;
+        
         if (userClass is null)
         {
             // if we didn't find the user class, there is nothing to do
@@ -29,6 +37,7 @@ public class ResilientGenerator : ISourceGenerator
         }
 
         StringBuilder strbldr = new();
+        strbldr.AppendLine("using System;");
         
         string fullName;
         
@@ -41,13 +50,17 @@ public class ResilientGenerator : ISourceGenerator
         {
             fullName = userClass.Identifier.ToString();
         }
+        
+        
 
         strbldr.Append($@"
 public partial class {userClass.Identifier}
 {{
-    public void Coucou()
+    public void {userMethod.Identifier}_Resilient({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})
     {{
-        // generated code
+        Console.WriteLine(""Before"");
+        {userMethod.Identifier}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))});
+        Console.WriteLine(""After"");
     }}
 }}");
         
@@ -91,17 +104,17 @@ public partial class {userClass.Identifier}
     
     class MySyntaxReceiver : ISyntaxReceiver
     {
-        public ClassDeclarationSyntax ClassToAugment { get; private set; }
+        public MethodDeclarationSyntax MethodToAugment { get; private set; }
         
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            if (syntaxNode is ClassDeclarationSyntax cds && cds.AttributeLists.Count > 0)
+            if (syntaxNode is MethodDeclarationSyntax cds && cds.AttributeLists.Count > 0)
             {
                 if (cds.AttributeLists
                     .SelectMany(e => e.Attributes)
                     .Any(e => e.Name.NormalizeWhitespace().ToFullString() == "Resilient"))
                 {
-                    ClassToAugment = cds;
+                    MethodToAugment = cds;
                 }
             }
         }

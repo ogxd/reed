@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using NUnit.Framework;
 using Reed;
 
@@ -5,29 +6,24 @@ using Reed;
 
 public class Tests
 {
-    [SetUp]
-    public void Setup()
-    {
-    }
-
     [Test]
-    public void Test1()
+    public void NonResilient()
     {
-        HelloWorldGenerated.HelloWorld.SayHello();
-        Assert.Pass();
+        new ResilientClass().SayHello("John");
+    }
+    
+    [Test]
+    public void Resilient()
+    {
+        new ResilientClass().SayHello_Resilient("John");
     }
 }
 
-[Resilient]
 public partial class ResilientClass
 {
-    public void UserMethod()
+    [Resilient]
+    public void SayHello(string name)
     {
-        this.Coucou();
-        //BlablaUserClass.Coucou();
-        //Coucou.Caca();
-        //this.GeneratedMethod();
-        // call into a generated method inside the class
-        //this.GeneratedMethod();
+        Console.WriteLine("Hello " + name);
     }
 }
