@@ -57,11 +57,11 @@ public partial class {userClass.Identifier}
     public void {userMethod.Identifier}_Resilient({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})
     {{
         try {{
-            // Copy the whole method body, so that we don't create another async state machine
+            // We have two options:
+            // - Copy the whole method body, so that we don't create another async state machine. Better performance, but shitty debugging experience.
             {userMethod.Body.ToString()}
-
+            // - Just call the original method.
             // {userMethod.Identifier}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))});
-            Console.WriteLine(""After"");
         }}
         catch (Exception ex) {{
             Console.WriteLine(""Exception handled"");
