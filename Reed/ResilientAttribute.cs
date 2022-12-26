@@ -1,6 +1,7 @@
 namespace Reed;
 
-public class ResilientAttribute : Attribute
+public class ResilientAttribute<T> : Attribute
+    where T : IResiliencyPolicy
 {
     
 }

@@ -51,16 +51,21 @@ public class ResilientGenerator : ISourceGenerator
             fullName = userClass.Identifier.ToString();
         }
         
-        
-
         strbldr.Append($@"
 public partial class {userClass.Identifier}
 {{
     public void {userMethod.Identifier}_Resilient({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})
     {{
-        Console.WriteLine(""Before"");
-        {userMethod.Identifier}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))});
-        Console.WriteLine(""After"");
+        try {{
+            // Copy the whole method body, so that we don't create another async state machine
+            {userMethod.Body.ToString()}
+
+            // {userMethod.Identifier}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))});
+            Console.WriteLine(""After"");
+        }}
+        catch (Exception ex) {{
+            Console.WriteLine(""Exception handled"");
+        }}
     }}
 }}");
         
@@ -112,7 +117,7 @@ public partial class {userClass.Identifier}
             {
                 if (cds.AttributeLists
                     .SelectMany(e => e.Attributes)
-                    .Any(e => e.Name.NormalizeWhitespace().ToFullString() == "Resilient"))
+                    .Any(e => e.Name.NormalizeWhitespace().ToFullString().StartsWith("Resilient")))
                 {
                     MethodToAugment = cds;
                 }

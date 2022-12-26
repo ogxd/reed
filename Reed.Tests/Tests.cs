@@ -21,9 +21,10 @@ public class Tests
 
 public partial class ResilientClass
 {
-    [Resilient]
+    [Resilient<ExceptionHandlingPolicy>]
     public void SayHello(string name)
     {
         Console.WriteLine("Hello " + name);
+        throw new Exception("Heh");
     }
 }
