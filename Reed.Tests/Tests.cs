@@ -1,30 +1,30 @@
-using System.Text.Json.Nodes;
 using NUnit.Framework;
-using Reed;
 
-//namespace Reed;
+namespace Reed;
 
 public class Tests
 {
     [Test]
     public void NonResilient()
     {
-        new ResilientClass().SayHello("John");
+        new ResilientClass(new ExceptionHandlingPolicy()).SayHello("John");
     }
     
     [Test]
     public void Resilient()
     {
-        new ResilientClass().SayHello_Resilient("John");
+        
+        new ResilientClass(new ExceptionHandlingPolicy()).SayHello_Resilient("John");
     }
 }
 
 public partial class ResilientClass
 {
-    [Resilient<ExceptionHandlingPolicy>]
+    [Resilient<IMyResiliencyPolicy>]
     public void SayHello(string name)
     {
         Console.WriteLine("Hello " + name);
         throw new Exception("Heh");
     }
 }
+
