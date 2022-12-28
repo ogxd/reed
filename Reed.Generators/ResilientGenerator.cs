@@ -20,26 +20,35 @@ public class ResilientGenerator : ISourceGenerator
         // the generator infrastructure will create a receiver and populate it
         // we can retrieve the populated instance via the context
         ResilientAttributeReceiver? syntaxReceiver = context.SyntaxReceiver as ResilientAttributeReceiver;
-
+        if (syntaxReceiver is null)
+        {
+            return;
+        }
+        
         // get the recorded user class
-        MethodDeclarationSyntax? userMethod = syntaxReceiver?.MethodToAugment;
-        if (userMethod is null)
+        MethodDeclarationSyntax userMethod = syntaxReceiver.MethodToAugment;
+
+        if (userMethod.Parent is not ClassDeclarationSyntax userClass)
         {
             // if we didn't find the user class, there is nothing to do
             return;
         }
         
-        ClassDeclarationSyntax userClass = userMethod.Parent as ClassDeclarationSyntax;
-        if (userClass is null)
+        // Retreive generic type
+        INamedTypeSymbol? attributeTypeSymbol = context.Compilation.GetSemanticModel(syntaxReceiver.AttributeSyntax.SyntaxTree).GetTypeInfo(syntaxReceiver.AttributeSyntax).ConvertedType as INamedTypeSymbol;
+        ITypeSymbol? policyTypeSymbol = attributeTypeSymbol?.TypeArguments.FirstOrDefault();
+
+        if (policyTypeSymbol == null)
         {
-            // if we didn't find the user class, there is nothing to do
             return;
         }
         
         StringBuilder strbldr = new();
         strbldr.AppendLine("using System;");
+        strbldr.AppendLine("using BenchmarkDotNet.Attributes;");
         strbldr.AppendLine("using Microsoft.Extensions.DependencyInjection;");
-
+        strbldr.AppendLine($"using {policyTypeSymbol.ContainingNamespace};");
+        
         string @namespace = TypeDeclarationSyntaxExtensions.GetNamespace(userClass);
         string fullname = userClass.Identifier.ToString();
         
@@ -49,25 +58,18 @@ public class ResilientGenerator : ISourceGenerator
             fullname = @namespace + '.' + fullname;
         }
 
-        INamedTypeSymbol type = context.Compilation.GetSemanticModel(syntaxReceiver.AttributeSyntax.SyntaxTree).GetTypeInfo(syntaxReceiver.AttributeSyntax).ConvertedType as INamedTypeSymbol;
-        //INamedTypeSymbol type = context.Compilation.GetTypeByMetadataName(syntaxReceiver.AttributeSyntax.Name.ToString());
-        //RscgDebug.WriteLine(">>> " + sem?.TypeArguments.FirstOrDefault()?.Name);
-        ITypeSymbol? policyTypeSymbol = type?.TypeArguments.FirstOrDefault();
-
-
-
-
         strbldr.AppendLine($$"""
         public partial class {{userClass.Identifier}}
         {
-            private {{policyTypeSymbol?.Name}} _resiliencyPolicy;
+            private {{policyTypeSymbol.Name}} _resiliencyPolicy;
 
             [ActivatorUtilitiesConstructor]
-            public {{userClass.Identifier}}({{policyTypeSymbol?.Name}} resiliencyPolicy) {
+            public {{userClass.Identifier}}({{policyTypeSymbol.Name}} resiliencyPolicy) {
                 _resiliencyPolicy = resiliencyPolicy;
             }
         
-            public void {{userMethod.Identifier}}_Resilient({{string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))}})
+            [Benchmark]
+            public async Task {{userMethod.Identifier}}_Resilient({{string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))}})
             {
         """);
         
@@ -81,7 +83,7 @@ public class ResilientGenerator : ISourceGenerator
                 // - Copy the whole method body, so that we don't create another async state machine. Better performance, but shitty debugging experience.
                 // userMethod.Body.ToString()
                 // - Just call the original method.
-                {{userMethod.Identifier}}({{string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))}});
+                await {{userMethod.Identifier}}({{string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))}});
         """);
         
         foreach (var suffix in IPolicySourceWriter.GetSuffixes(policyTypeSymbol.AllInterfaces))
@@ -100,16 +102,15 @@ public class ResilientGenerator : ISourceGenerator
             strbldr.AppendLine("// " + text);
         }
         
-        // var attribute = context.Compilation.Assembly.GetAttributes().FirstOrDefault(x => x.AttributeClass.ToString() == "Helloworld.TestAttribute1");
-        
+        // Write generated code
         SourceText sourceText = SourceText.From(strbldr.ToString(), Encoding.UTF8);
-        
         context.AddSource($"{fullname}.Reed.cs", sourceText);
     }
      
     private class ResilientAttributeReceiver : ISyntaxReceiver
     {
         public MethodDeclarationSyntax MethodToAugment { get; private set; }
+        
         public AttributeSyntax AttributeSyntax { get; private set; }
         
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)

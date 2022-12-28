@@ -7,20 +7,20 @@ public class Tests
     [Test]
     public void NonResilient()
     {
-        new ResilientClass(new ExceptionHandlingPolicy()).SayHello("John");
+        //new ResilientClass(new ExceptionHandlingPolicy()).SayHello("John");
     }
     
     [Test]
     public void Resilient()
     {
         
-        new ResilientClass(new ExceptionHandlingPolicy()).SayHello_Resilient("John");
+        //new ResilientClass(new ExceptionHandlingPolicy()).SayHello_Resilient("John");
     }
 }
 
 public partial class ResilientClass
 {
-    [Resilient<IMyResiliencyPolicy>]
+    //[Resilient<IMyResiliencyPolicy>]
     public void SayHello(string name)
     {
         Console.WriteLine("Hello " + name);

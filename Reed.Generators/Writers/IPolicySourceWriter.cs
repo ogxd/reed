@@ -6,6 +6,7 @@ public interface IPolicySourceWriter
 {
     IEnumerable<string> GetPrefixLines();
     IEnumerable<string> GetSuffixLines();
+    IEnumerable<string> GetFieldsLines();
 
     public static IPolicySourceWriter? GetPolicyWriter(INamedTypeSymbol policyInterfaceSymbol)
     {
@@ -47,34 +48,5 @@ public interface IPolicySourceWriter
                 yield return line;
             }
         }
-    }
-}
-
-public class TimeoutPolicySourceWriter : IPolicySourceWriter
-{
-    public IEnumerable<string> GetPrefixLines()
-    {
-        yield return "// timeout policy prefix";
-        yield return "Console.WriteLine(_resiliencyPolicy.OptimisticTimeout);";
-    }
-
-    public IEnumerable<string> GetSuffixLines()
-    {
-        yield return "// timeout policy suffix";
-    }
-}
-
-public class ExceptionHandlingPolicySourceWriter : IPolicySourceWriter
-{
-    public IEnumerable<string> GetPrefixLines()
-    {
-        yield return "try {";
-    }
-
-    public IEnumerable<string> GetSuffixLines()
-    {
-        yield return "} catch(Exception ex) {";
-        yield return """Console.WriteLine("Exception handled: " + ex);""";
-        yield return "}";
     }
 }
