@@ -2,21 +2,23 @@ namespace Reed.Generators;
 
 public class ExceptionHandlingPolicySourceWriter : IPolicySourceWriter
 {
-    public IEnumerable<string> GetPrefixLines()
+    public void WriteBefore(CsharpStringBuilder strbldr)
     {
-        yield return "try {";
+        strbldr.AppendLine("try");
+        strbldr.OpenBracket();
     }
 
-    public IEnumerable<string> GetSuffixLines()
+    public void WriteAfter(CsharpStringBuilder strbldr)
     {
-        yield return "} catch(Exception ex) {";
-        //yield return "return Task.CompletedTask;";
-        //yield return """Console.WriteLine("Exception handled: " + ex);""";
-        yield return "}";
+        strbldr.CloseBracket();
+        strbldr.AppendLine("catch (Exception ex)");
+        strbldr.OpenBracket();
+        strbldr.NewLine();
+        strbldr.CloseBracket();
     }
 
-    public IEnumerable<string> GetFieldsLines()
+    public void WriteFields(CsharpStringBuilder strbldr)
     {
-        return Enumerable.Empty<string>();
+        
     }
 }

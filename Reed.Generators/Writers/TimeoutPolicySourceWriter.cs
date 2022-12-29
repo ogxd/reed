@@ -2,19 +2,19 @@ namespace Reed.Generators;
 
 public class TimeoutPolicySourceWriter : IPolicySourceWriter
 {
-    public IEnumerable<string> GetPrefixLines()
+    public void WriteBefore(CsharpStringBuilder strbldr)
     {
-        yield return "// timeout policy prefix";
-        yield return "Console.WriteLine(_resiliencyPolicy.OptimisticTimeout);";
+        strbldr.AppendLine("// timeout policy prefix");
+        strbldr.AppendLine("Console.WriteLine(_resiliencyPolicy.OptimisticTimeout);");
     }
 
-    public IEnumerable<string> GetSuffixLines()
+    public void WriteAfter(CsharpStringBuilder strbldr)
     {
-        yield return "// timeout policy suffix";
+        strbldr.AppendLine("// timeout policy suffix");
     }
 
-    public IEnumerable<string> GetFieldsLines()
+    public void WriteFields(CsharpStringBuilder strbldr)
     {
-        return Enumerable.Empty<string>();
+        
     }
 }

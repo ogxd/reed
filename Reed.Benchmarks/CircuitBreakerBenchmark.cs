@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using Polly;
-using Reed;
 
 namespace Reed.Benchmarks;
 
@@ -21,7 +20,7 @@ public partial class CircuitBreakerBenchmark
     [GlobalSetup]
     public void Setup()
     {
-        _resiliencyPolicy = new ExceptionHandlingPolicy();
+        //_resiliencyPolicy = new ExceptionHandlingPolicy();
     }
     
     [Benchmark]
@@ -37,7 +36,7 @@ public partial class CircuitBreakerBenchmark
     }
     
     [Resilient<IMyResiliencyPolicy>]
-    public Task Reed()
+    public Task Reed2()
     {
         return MyTask();
     }

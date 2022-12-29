@@ -4,9 +4,9 @@ namespace Reed.Generators;
 
 public interface IPolicySourceWriter
 {
-    IEnumerable<string> GetPrefixLines();
-    IEnumerable<string> GetSuffixLines();
-    IEnumerable<string> GetFieldsLines();
+    void WriteBefore(CsharpStringBuilder strbldr);
+    void WriteAfter(CsharpStringBuilder strbldr);
+    void WriteFields(CsharpStringBuilder strbldr);
 
     public static IPolicySourceWriter? GetPolicyWriter(INamedTypeSymbol policyInterfaceSymbol)
     {
@@ -18,35 +18,21 @@ public interface IPolicySourceWriter
         };
     }
 
-    public static IEnumerable<string> GetPrefixes(IReadOnlyList<INamedTypeSymbol> policyInterfacesSymbols)
+    public static void WriteBefore(IReadOnlyList<INamedTypeSymbol> policyInterfacesSymbols, CsharpStringBuilder strbldr)
     {
         foreach (INamedTypeSymbol policyInterfaceSymbol in policyInterfacesSymbols)
         {
             var writer = GetPolicyWriter(policyInterfaceSymbol);
-            if (writer == null)
-            {
-                continue;
-            }
-            foreach (var line in writer.GetPrefixLines())
-            {
-                yield return line;
-            }
+            writer?.WriteBefore(strbldr);
         }
     }
     
-    public static IEnumerable<string> GetSuffixes(IReadOnlyList<INamedTypeSymbol> policyInterfacesSymbols)
+    public static void WriteAfter(IReadOnlyList<INamedTypeSymbol> policyInterfacesSymbols, CsharpStringBuilder strbldr)
     {
         foreach (INamedTypeSymbol policyInterfaceSymbol in policyInterfacesSymbols)
         {
             var writer = GetPolicyWriter(policyInterfaceSymbol);
-            if (writer == null)
-            {
-                continue;
-            }
-            foreach (var line in writer.GetSuffixLines())
-            {
-                yield return line;
-            }
+            writer?.WriteAfter(strbldr);
         }
     }
 }
