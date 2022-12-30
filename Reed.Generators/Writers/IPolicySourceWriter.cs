@@ -14,25 +14,8 @@ public interface IPolicySourceWriter
         {
             nameof(IOptimisticTimeoutPolicy) => new TimeoutPolicySourceWriter(),
             nameof(IExceptionHandlingPolicy) => new ExceptionHandlingPolicySourceWriter(),
+            nameof(ICircuitBreakerPolicy) => new CircuitBreakerPolicySourceWriter(),
             _ => null,
         };
-    }
-
-    public static void WriteBefore(IReadOnlyList<INamedTypeSymbol> policyInterfacesSymbols, CsharpStringBuilder strbldr)
-    {
-        foreach (INamedTypeSymbol policyInterfaceSymbol in policyInterfacesSymbols)
-        {
-            var writer = GetPolicyWriter(policyInterfaceSymbol);
-            writer?.WriteBefore(strbldr);
-        }
-    }
-    
-    public static void WriteAfter(IReadOnlyList<INamedTypeSymbol> policyInterfacesSymbols, CsharpStringBuilder strbldr)
-    {
-        foreach (INamedTypeSymbol policyInterfaceSymbol in policyInterfacesSymbols)
-        {
-            var writer = GetPolicyWriter(policyInterfaceSymbol);
-            writer?.WriteAfter(strbldr);
-        }
     }
 }

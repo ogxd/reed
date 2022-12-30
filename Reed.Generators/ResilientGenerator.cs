@@ -56,7 +56,6 @@ public class ResilientGenerator : ISourceGenerator
 
         CsharpStringBuilder strbldr = new();
         strbldr.AppendLine("using System;");
-        strbldr.AppendLine("using BenchmarkDotNet.Attributes;");
         strbldr.AppendLine("using Microsoft.Extensions.DependencyInjection;"); // ActivatorUtilitiesConstructor's namespace
         strbldr.AppendLine($"using {policyTypeSymbol.ContainingNamespace};"); // Policy namespace
         strbldr.NewLine();
@@ -74,23 +73,27 @@ public class ResilientGenerator : ISourceGenerator
         strbldr.AppendLine($"public partial class {userClass.Identifier}");
         strbldr.OpenBracket();
         strbldr.AppendLine($"private {policyTypeSymbol.Name} _resiliencyPolicy;");
+        strbldr.WriteFields(policyTypeSymbol);
         strbldr.NewLine();
+        
         strbldr.AppendLine($"[ActivatorUtilitiesConstructor]");
         strbldr.AppendLine($"public {userClass.Identifier}({policyTypeSymbol.Name} resiliencyPolicy)");
         strbldr.OpenBracket();
         strbldr.AppendLine("_resiliencyPolicy = resiliencyPolicy;");
         strbldr.CloseBracket();
         strbldr.NewLine();
-        strbldr.AppendLine("[Benchmark]");
+        
+        // TODO: Handle all return types (including async)
         strbldr.AppendLine($"public async Task {userMethod.Identifier}_Resilient({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})");
         strbldr.OpenBracket();
 
-        IPolicySourceWriter.WriteBefore(policyTypeSymbol.AllInterfaces, strbldr);
+        strbldr.WriteBefore(policyTypeSymbol);
 
+        // 2 flavors : Rewrite method OR just call the original method
         //strbldr.AppendLine(userMethod.Body.ToString());
         strbldr.AppendLine($"await {userMethod.Identifier}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))});");
 
-        IPolicySourceWriter.WriteAfter(policyTypeSymbol.AllInterfaces, strbldr);
+        strbldr.WriteAfter(policyTypeSymbol);
 
         strbldr.CloseBracket();
         strbldr.CloseBracket();

@@ -5,7 +5,7 @@ namespace Reed.Benchmarks;
 
 [MemoryDiagnoser]
 [ExceptionDiagnoser]
-[SimpleJob(launchCount: 2, warmupCount: 2, iterationCount: 6)]
+[SimpleJob]
 public partial class CircuitBreakerBenchmark
 {
     private IAsyncPolicy _pollyPolicy = Policy
@@ -14,15 +14,16 @@ public partial class CircuitBreakerBenchmark
 
     public CircuitBreakerBenchmark()
     {
-        
+        _resiliencyPolicy = new CircuitBreakerPolicy();
     }
 
-    [GlobalSetup]
+    [IterationSetup]
     public void Setup()
     {
-        //_resiliencyPolicy = new ExceptionHandlingPolicy();
+        // Hack to make sure Reed circuit breaker is always open
+        _circuitBreakerThreshold = 0;
     }
-    
+
     [Benchmark]
     public async Task Polly()
     {
@@ -32,11 +33,18 @@ public partial class CircuitBreakerBenchmark
         }
         catch
         {
+            // ignored
         }
     }
+
+    [Benchmark]
+    public Task Reed()
+    {
+        return ReedInternal_Resilient();
+    }
     
-    [Resilient<IMyResiliencyPolicy>]
-    public Task Reed2()
+    [Resilient<ICircuitBreakerPolicy>]
+    public Task ReedInternal()
     {
         return MyTask();
     }
@@ -45,4 +53,9 @@ public partial class CircuitBreakerBenchmark
     {
         throw new TaskCanceledException();
     }
+}
+
+public class CircuitBreakerPolicy : ICircuitBreakerPolicy
+{
+    public int CircuitBreakerFailureThreshold => 100;
 }

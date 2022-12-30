@@ -1,0 +1,10 @@
+﻿<wpf:ResourceDictionary xml:space="preserve" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:s="clr-namespace:System;assembly=mscorlib" xmlns:ss="urn:shemas-jetbrains-com:settings-storage-xaml" xmlns:wpf="http://schemas.microsoft.com/winfx/2006/xaml/presentation">
+	<s:String x:Key="/Default/Environment/UnitTesting/UnitTestSessionStore/Sessions/=c529cca9_002Dc381_002D4923_002D8321_002Dd914e35ea7b8/@EntryIndexedValue">&lt;SessionState ContinuousTestingMode="0" IsActive="True" Name="Tests" xmlns="urn:schemas-jetbrains-com:jetbrains-ut-session"&gt;
+  &lt;TestAncestor&gt;
+    &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.Tests&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.ReedExtensionsTests.NonResilient&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.ReedExtensionsTests.DoesNotGetAboveMax&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.ReedExtensionsTests.IncrementIsThreadSafe&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.CircuitBreakerPolicyTests.NonResilient&lt;/TestId&gt;
+  &lt;/TestAncestor&gt;
+&lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

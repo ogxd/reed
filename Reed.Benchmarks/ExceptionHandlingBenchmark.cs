@@ -1,6 +1,5 @@
 using BenchmarkDotNet.Attributes;
 using Polly;
-using Reed;
 
 namespace Reed.Benchmarks;
 
@@ -15,12 +14,6 @@ public partial class ExceptionHandlingBenchmark
 
     public ExceptionHandlingBenchmark()
     {
-        
-    }
-
-    [GlobalSetup]
-    public void Setup()
-    {
         _resiliencyPolicy = new ExceptionHandlingPolicy();
     }
     
@@ -30,8 +23,14 @@ public partial class ExceptionHandlingBenchmark
         return _pollyPolicy.ExecuteAsync(MyTask);
     }
     
-    [Resilient<IMyResiliencyPolicy>]
+    [Benchmark]
     public Task Reed()
+    {
+        return ReedInternal_Resilient();
+    }
+    
+    [Resilient<IExceptionHandlingPolicy>]
+    public Task ReedInternal()
     {
         return MyTask();
     }
@@ -42,11 +41,7 @@ public partial class ExceptionHandlingBenchmark
     }
 }
 
-public class ExceptionHandlingPolicy : IMyResiliencyPolicy
+public class ExceptionHandlingPolicy : IExceptionHandlingPolicy
 {
     public bool HandleAllExceptions => true;
-}
-
-public interface IMyResiliencyPolicy : IExceptionHandlingPolicy
-{
 }
