@@ -6,5 +6,6 @@
     &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.ReedExtensionsTests.DoesNotGetAboveMax&lt;/TestId&gt;
     &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.ReedExtensionsTests.IncrementIsThreadSafe&lt;/TestId&gt;
     &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.CircuitBreakerPolicyTests.NonResilient&lt;/TestId&gt;
+    &lt;TestId&gt;NUnit3x::8466CA34-32A3-4B3B-BF66-50254B221150::net6.0::Reed.CircuitBreakerPolicyTests.CircuitBreakerIncrementsUpToMaximumThreshold&lt;/TestId&gt;
   &lt;/TestAncestor&gt;
 &lt;/SessionState&gt;</s:String></wpf:ResourceDictionary>

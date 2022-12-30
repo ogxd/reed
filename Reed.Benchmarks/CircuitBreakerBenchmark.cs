@@ -40,10 +40,10 @@ public partial class CircuitBreakerBenchmark
     [Benchmark]
     public Task Reed()
     {
-        return ReedInternal_Resilient();
+        return ReedWrapped();
     }
     
-    [Resilient<ICircuitBreakerPolicy>]
+    [Resilient<ICircuitBreakerPolicy>("ReedWrapped")]
     public Task ReedInternal()
     {
         return MyTask();

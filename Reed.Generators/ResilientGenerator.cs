@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -28,7 +29,15 @@ public class ResilientGenerator : ISourceGenerator
         
         foreach (var resilientMethod in syntaxReceiver.ResilientMethods)
         {
-            WriteResilientImplementation(resilientMethod, context);
+            try
+            {
+                WriteResilientImplementation(resilientMethod, context);
+            }
+            catch (Exception ex)
+            {
+                context.LogError(ex.ToString());
+                RscgDebug.WriteLine(ex.ToString());
+            }
         }
     }
 
@@ -44,15 +53,32 @@ public class ResilientGenerator : ISourceGenerator
         }
 
         // Retreive generic type
-        INamedTypeSymbol? attributeTypeSymbol = context.Compilation.GetSemanticModel(resilientMethodSyntax.AttributeSyntax.SyntaxTree).GetTypeInfo(resilientMethodSyntax.AttributeSyntax).ConvertedType as INamedTypeSymbol;
+        SemanticModel semanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.AttributeSyntax.SyntaxTree);
+        INamedTypeSymbol? attributeTypeSymbol = semanticModel.GetTypeInfo(resilientMethodSyntax.AttributeSyntax).ConvertedType as INamedTypeSymbol;
         ITypeSymbol? policyTypeSymbol = attributeTypeSymbol?.TypeArguments.FirstOrDefault();
 
         if (policyTypeSymbol == null)
         {
             return;
         }
-
-        RscgDebug.WriteLine($"Write to prout.Reed.cs");
+        
+        string methodName = $"{userMethod.Identifier}_Resilient";
+        
+        SemanticModel methodSemanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.MethodDeclarationSyntax.SyntaxTree);
+        IMethodSymbol s = methodSemanticModel.GetDeclaredSymbol(resilientMethodSyntax.MethodDeclarationSyntax);
+        foreach (AttributeData attributeData in s.GetAttributes())
+        {
+            if (attributeData.ConstructorArguments.Length == 0)
+                continue;
+            TypedConstant firstArgument = attributeData.ConstructorArguments[0];
+            methodName = firstArgument.Value.ToString();
+        }
+        
+        if (methodName == userMethod.Identifier.ToString())
+        {
+            context.Log0010(userMethod.GetLocation(), methodName);
+            return;
+        }
 
         CsharpStringBuilder strbldr = new();
         strbldr.AppendLine("using System;");
@@ -60,7 +86,7 @@ public class ResilientGenerator : ISourceGenerator
         strbldr.AppendLine($"using {policyTypeSymbol.ContainingNamespace};"); // Policy namespace
         strbldr.NewLine();
 
-        string @namespace = TypeDeclarationSyntaxExtensions.GetNamespace(userClass);
+        string? @namespace = TypeDeclarationSyntaxExtensions.GetNamespace(userClass);
         string fullname = userClass.Identifier.ToString();
 
         if (!string.IsNullOrEmpty(@namespace))
@@ -84,7 +110,7 @@ public class ResilientGenerator : ISourceGenerator
         strbldr.NewLine();
         
         // TODO: Handle all return types (including async)
-        strbldr.AppendLine($"public async Task {userMethod.Identifier}_Resilient({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})");
+        strbldr.AppendLine($"public async Task {methodName}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})");
         strbldr.OpenBracket();
 
         strbldr.WriteBefore(policyTypeSymbol);
@@ -98,12 +124,8 @@ public class ResilientGenerator : ISourceGenerator
         strbldr.CloseBracket();
         strbldr.CloseBracket();
 
-        // strbldr.AppendLine("// DEBUG");
-        // foreach (var text in RscgDebug.Text)
-        // {
-        //     strbldr.AppendLine("// " + text);
-        // }
-
+        RscgDebug.WriteLine($"Write to {fullname}.Reed.cs");
+        
         // Write generated code
         SourceText sourceText = SourceText.From(strbldr.ToString(), Encoding.UTF8);
         context.AddSource($"{fullname}.Reed.cs", sourceText);
@@ -111,36 +133,50 @@ public class ResilientGenerator : ISourceGenerator
 
     private class ResilientAttributeReceiver : ISyntaxReceiver
     {
-        private List<ResilientMethodSyntax> _resilientMethods = new();
+        private readonly List<ResilientMethodSyntax> _resilientMethods = new();
 
         public IReadOnlyList<ResilientMethodSyntax> ResilientMethods => _resilientMethods;
 
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            if (syntaxNode is MethodDeclarationSyntax mds && mds.AttributeLists.Count > 0)
+            if (ResilientMethodSyntax.TryGetResilientMethod(syntaxNode, out var resilientMethodSyntax))
             {
-                var attr = mds.AttributeLists
-                    .SelectMany(e => e.Attributes)
-                    .FirstOrDefault(e => e.Name.NormalizeWhitespace().ToFullString().StartsWith("Resilient"));
-                
-                if (attr != null)
-                {
-                    _resilientMethods.Add(new (mds, attr));
-                }
+                _resilientMethods.Add(resilientMethodSyntax);
             }
         }
     }
 
-    public record ResilientMethodSyntax(MethodDeclarationSyntax MethodDeclarationSyntax, AttributeSyntax AttributeSyntax);
-
-    public static class RscgDebug
+    public class ResilientMethodSyntax
     {
-        private static List<string> _text = new();
-        public static void WriteLine(string text)
+        public MethodDeclarationSyntax MethodDeclarationSyntax{ get; }
+        public AttributeSyntax AttributeSyntax { get; }
+        
+        private ResilientMethodSyntax(MethodDeclarationSyntax methodDeclarationSyntax, AttributeSyntax attributeSyntax)
         {
-            _text.Add(text);
+            AttributeSyntax = attributeSyntax;
+            MethodDeclarationSyntax = methodDeclarationSyntax;
         }
 
-        public static IReadOnlyList<string> Text => _text;
+        public static bool TryGetResilientMethod(SyntaxNode syntaxNode, out ResilientMethodSyntax resilientMethodSyntax)
+        {
+            resilientMethodSyntax = null!;
+
+            if (syntaxNode is not MethodDeclarationSyntax mds)
+                return false;
+
+            if (mds.AttributeLists.Count == 0)
+                return false;
+            
+            var resilientAttributeSyntaxNode = mds.AttributeLists
+                .SelectMany(e => e.Attributes)
+                .FirstOrDefault(e => e.Name.NormalizeWhitespace().ToFullString().StartsWith("Resilient"));
+            
+            if (resilientAttributeSyntaxNode == null)
+                return false;
+
+            resilientMethodSyntax = new ResilientMethodSyntax(mds, resilientAttributeSyntaxNode);
+
+            return true;
+        }
     }
 }
