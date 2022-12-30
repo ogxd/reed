@@ -64,6 +64,7 @@ public class ResilientGenerator : ISourceGenerator
         
         string methodName = $"{userMethod.Identifier}_Resilient";
         
+        // TODO: Use sematic model in more places or make some extension methods
         SemanticModel methodSemanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.MethodDeclarationSyntax.SyntaxTree);
         IMethodSymbol s = methodSemanticModel.GetDeclaredSymbol(resilientMethodSyntax.MethodDeclarationSyntax);
         foreach (AttributeData attributeData in s.GetAttributes())
@@ -71,7 +72,13 @@ public class ResilientGenerator : ISourceGenerator
             if (attributeData.ConstructorArguments.Length == 0)
                 continue;
             TypedConstant firstArgument = attributeData.ConstructorArguments[0];
-            methodName = firstArgument.Value.ToString();
+            methodName = firstArgument.Value?.ToString();
+            
+            if (string.IsNullOrEmpty(methodName))
+            {
+                context.Log0011(resilientMethodSyntax.AttributeSyntax.GetLocation());
+                return;
+            }
         }
         
         if (methodName == userMethod.Identifier.ToString())

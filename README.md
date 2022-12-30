@@ -35,15 +35,15 @@ For now this is just a proof of concept ;)
 ## Benchmark
 
 As a small example, here is a small benchmark of Polly VS Reed for exception handling:    
-|         Method |     Mean |    Error |   StdDev |   Gen0 | Exceptions | Allocated |
-|--------------- |---------:|---------:|---------:|-------:|-----------:|----------:|
-|          Polly | 31.86 us | 0.260 us | 0.203 us | 1.1597 |     2.0000 |    2496 B |
-| Reed_Resilient | 14.85 us | 0.311 us | 0.243 us | 0.1678 |     1.0000 |     360 B |
+| Method |     Mean |    Error |   StdDev |   Gen0 | Exceptions | Allocated |
+|------- |---------:|---------:|---------:|-------:|-----------:|----------:|
+|  Polly | 31.86 us | 0.260 us | 0.203 us | 1.1597 |     2.0000 |    2496 B |
+|   Reed | 14.85 us | 0.311 us | 0.243 us | 0.1678 |     1.0000 |     360 B |
     
 An now a benchmark of Polly Advanced Circuit Breakers VS Reed Circuit Breaker (code generated)
-|         Method |      Mean |    Error |   StdDev |   Gen0 | Exceptions | Allocated |
-|--------------- |----------:|---------:|---------:|-------:|-----------:|----------:|
-|          Polly | 132.93 us | 1.882 us | 1.469 us | 4.1504 |     7.0000 |    9120 B |
-| Reed_Resilient |  14.78 us | 0.468 us | 0.338 us | 0.1678 |     1.0000 |     360 B |
+| Method |      Mean |    Error |   StdDev |   Gen0 | Exceptions | Allocated |
+|------- |----------:|---------:|---------:|-------:|-----------:|----------:|
+|  Polly | 131.22 us | 0.527 us | 0.467 us | 4.1504 |     7.0000 |    9120 B |
+|   Reed |  14.58 us | 0.082 us | 0.076 us | 0.1678 |     1.0000 |     360 B |
 
 7 exceptions thrown with Polly and 9kb allocated per iteration 💀🤯

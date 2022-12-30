@@ -5,9 +5,11 @@ namespace Reed.Benchmarks;
 
 [MemoryDiagnoser]
 [ExceptionDiagnoser]
-[SimpleJob(launchCount: 2, warmupCount: 2, iterationCount: 6)]
+[SimpleJob]
 public partial class ExceptionHandlingBenchmark
 {
+    private const int Iterations = 1;
+    
     private IAsyncPolicy _pollyPolicy = Policy
         .Handle<Exception>()
         .FallbackAsync(_ => Task.CompletedTask);
@@ -18,15 +20,21 @@ public partial class ExceptionHandlingBenchmark
     }
     
     [Benchmark]
-    public Task Polly()
+    public async Task Polly()
     {
-        return _pollyPolicy.ExecuteAsync(MyTask);
+        for (int i = 0; i < Iterations; i++)
+        {
+            await _pollyPolicy.ExecuteAsync(MyTask);
+        }
     }
     
     [Benchmark]
-    public Task Reed()
+    public async Task Reed()
     {
-        return ReedInternal_Resilient();
+        for (int i = 0; i < Iterations; i++)
+        {
+            await ReedInternal_Resilient();
+        }
     }
     
     [Resilient<IExceptionHandlingPolicy>]

@@ -4,7 +4,7 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Reed.Generators;
 
-[Generator("x")]
+[Generator]
 public class DebugGenerator : ISourceGenerator
 {
     public void Initialize(GeneratorInitializationContext context)

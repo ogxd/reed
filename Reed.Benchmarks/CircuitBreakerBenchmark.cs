@@ -8,6 +8,8 @@ namespace Reed.Benchmarks;
 [SimpleJob]
 public partial class CircuitBreakerBenchmark
 {
+    private const int Iterations = 1;
+    
     private IAsyncPolicy _pollyPolicy = Policy
         .Handle<Exception>()
         .AdvancedCircuitBreakerAsync(1, TimeSpan.FromDays(1), int.MaxValue, TimeSpan.FromSeconds(1));   
@@ -17,39 +19,40 @@ public partial class CircuitBreakerBenchmark
         _resiliencyPolicy = new CircuitBreakerPolicy();
     }
 
-    [IterationSetup]
-    public void Setup()
-    {
-        // Hack to make sure Reed circuit breaker is always open
-        _circuitBreakerThreshold = 0;
-    }
-
     [Benchmark]
     public async Task Polly()
     {
-        try
+        for (int i = 0; i < Iterations; i++)
         {
-            await _pollyPolicy.ExecuteAsync(MyTask);
-        }
-        catch
-        {
-            // ignored
+            try
+            {
+                await _pollyPolicy.ExecuteAsync(MyTask);
+            }
+            catch
+            {
+                // ignored
+            }
         }
     }
 
     [Benchmark]
-    public Task Reed()
+    public async Task Reed()
     {
-        return ReedWrapped();
+        for (int i = 0; i < Iterations; i++)
+        {
+            // Hack to make sure Reed circuit breaker is always open
+            _circuitBreakerThreshold = 0;
+            await ReedWrapped();
+        }
     }
     
     [Resilient<ICircuitBreakerPolicy>("ReedWrapped")]
-    public Task ReedInternal()
+    private Task ReedInternal()
     {
         return MyTask();
     }
-    
-    public Task MyTask()
+
+    private Task MyTask()
     {
         throw new TaskCanceledException();
     }

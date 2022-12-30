@@ -33,5 +33,15 @@ public static class Diagnostics
             "Log", 
             DiagnosticSeverity.Error, true), location, name));
     }
+    
+    public static void Log0011(this GeneratorExecutionContext context, Location location)
+    {
+        context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
+            "REED0011",
+            "Method Naming Issue",
+            "Custom method name format is not valid", 
+            "Log", 
+            DiagnosticSeverity.Error, true), location));
+    }
 }
     
