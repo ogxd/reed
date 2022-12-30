@@ -51,22 +51,13 @@ public class ResilientGenerator : ISourceGenerator
             // if we didn't find the user class, there is nothing to do
             return;
         }
-
-        // Retreive generic type
-        SemanticModel semanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.AttributeSyntax.SyntaxTree);
-        INamedTypeSymbol? attributeTypeSymbol = semanticModel.GetTypeInfo(resilientMethodSyntax.AttributeSyntax).ConvertedType as INamedTypeSymbol;
-        ITypeSymbol? policyTypeSymbol = attributeTypeSymbol?.TypeArguments.FirstOrDefault();
-
-        if (policyTypeSymbol == null)
-        {
-            return;
-        }
         
-        string methodName = $"{userMethod.Identifier}_Resilient";
+        string? methodName = $"{userMethod.Identifier}_Resilient";
         
         // TODO: Use sematic model in more places or make some extension methods
         SemanticModel methodSemanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.MethodDeclarationSyntax.SyntaxTree);
-        IMethodSymbol s = methodSemanticModel.GetDeclaredSymbol(resilientMethodSyntax.MethodDeclarationSyntax);
+        IMethodSymbol? s = methodSemanticModel.GetDeclaredSymbol(resilientMethodSyntax.MethodDeclarationSyntax);
+        
         foreach (AttributeData attributeData in s.GetAttributes())
         {
             if (attributeData.ConstructorArguments.Length == 0)
@@ -86,6 +77,16 @@ public class ResilientGenerator : ISourceGenerator
             context.Log0010(userMethod.GetLocation(), methodName);
             return;
         }
+        
+        // Retreive generic type
+        SemanticModel semanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.AttributeSyntax.SyntaxTree);
+        INamedTypeSymbol? attributeTypeSymbol = semanticModel.GetTypeInfo(resilientMethodSyntax.AttributeSyntax).ConvertedType as INamedTypeSymbol;
+        ITypeSymbol? policyTypeSymbol = attributeTypeSymbol?.TypeArguments.FirstOrDefault();
+
+        if (policyTypeSymbol == null)
+        {
+            return;
+        }
 
         CsharpStringBuilder strbldr = new();
         strbldr.AppendLine("using System;");
@@ -93,7 +94,7 @@ public class ResilientGenerator : ISourceGenerator
         strbldr.AppendLine($"using {policyTypeSymbol.ContainingNamespace};"); // Policy namespace
         strbldr.NewLine();
 
-        string? @namespace = TypeDeclarationSyntaxExtensions.GetNamespace(userClass);
+        string? @namespace = userClass.GetNamespace();
         string fullname = userClass.Identifier.ToString();
 
         if (!string.IsNullOrEmpty(@namespace))
@@ -155,7 +156,7 @@ public class ResilientGenerator : ISourceGenerator
 
     public class ResilientMethodSyntax
     {
-        public MethodDeclarationSyntax MethodDeclarationSyntax{ get; }
+        public MethodDeclarationSyntax MethodDeclarationSyntax { get; }
         public AttributeSyntax AttributeSyntax { get; }
         
         private ResilientMethodSyntax(MethodDeclarationSyntax methodDeclarationSyntax, AttributeSyntax attributeSyntax)

@@ -61,4 +61,9 @@ public partial class CircuitBreakerBenchmark
 public class CircuitBreakerPolicy : ICircuitBreakerPolicy
 {
     public int CircuitBreakerFailureThreshold => 100;
+    
+    public bool IsExceptionHandled(Exception exception)
+    {
+        return true;
+    }
 }

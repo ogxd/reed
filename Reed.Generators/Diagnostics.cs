@@ -24,7 +24,7 @@ public static class Diagnostics
             DiagnosticSeverity.Error, true), null));
     }
 
-    public static void Log0010(this GeneratorExecutionContext context, Location location, string name)
+    public static void Log0010(this GeneratorExecutionContext context, Location location, string? name)
     {
         context.ReportDiagnostic(Diagnostic.Create(new DiagnosticDescriptor(
             "REED0010",

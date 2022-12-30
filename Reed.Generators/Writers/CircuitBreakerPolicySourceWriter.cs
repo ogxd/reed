@@ -17,7 +17,7 @@ public class CircuitBreakerPolicySourceWriter : IPolicySourceWriter
     {
         strbldr.AppendLine("ReedExtensions.DecrementClamped(ref _circuitBreakerThreshold, 0);");
         strbldr.CloseBracket();
-        strbldr.AppendLine("catch (Exception ex)");
+        strbldr.AppendLine("catch (Exception exception) when (_resiliencyPolicy.IsExceptionHandled(exception))");
         strbldr.OpenBracket();
         strbldr.AppendLine($"ReedExtensions.IncrementClamped(ref _circuitBreakerThreshold, _resiliencyPolicy.{nameof(ICircuitBreakerPolicy.CircuitBreakerFailureThreshold)});");
         strbldr.CloseBracket();
