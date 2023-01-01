@@ -23,14 +23,18 @@ public class ResilientClassSourceBuilder
         return this;
     }
     
-    public ResilientClassSourceBuilder AddUsing(string value)
+    public ResilientClassSourceBuilder AddUsing(string? value)
     {
-        _usings.Add(value);
+        if (!string.IsNullOrEmpty(value))
+        {
+            _usings.Add(value);
+        }
         return this;
     }
     
-    public ResilientClassSourceBuilder AddResiliencyPolicy(string value)
+    public ResilientClassSourceBuilder AddResiliencyPolicy(string? @namespace, string value)
     {
+        AddUsing(@namespace);
         _resiliencyPolicies.Add(value);
         return this;
     }
@@ -62,21 +66,18 @@ public class ResilientClassSourceBuilder
         strbldr.AppendLine($"public partial class {_name}");
         strbldr.OpenBracket();
         // Write resiliency policies fields
-        foreach (string value in _resiliencyPolicies)
+        foreach (string name in _resiliencyPolicies)
         {
-            // strbldr.AppendLine($"private {value} _reed{value};");
-            strbldr.AppendLine($"private {value} _resiliencyPolicy;"); // TODO: Handle several policies
+            strbldr.AppendLine($"private {name} _reed{name};");
         }
         strbldr.NewLine();
         
         strbldr.AppendLine($"[ActivatorUtilitiesConstructor]");
-        // strbldr.AppendLine($"public {_name}({string.Join(", ", _resiliencyPolicies.Select(x => $"{x} reed{x}"))})");
-        strbldr.AppendLine($"public {_name}({string.Join(", ", _resiliencyPolicies.Select(x => $"{x} resiliencyPolicy"))})");
+        strbldr.AppendLine($"public {_name}({string.Join(", ", _resiliencyPolicies.Select(x => $"{x} reed{x}"))})");
         strbldr.OpenBracket();
         foreach (string value in _resiliencyPolicies)
         {
-            // strbldr.AppendLine($"_reed{value} = reed{value};");
-            strbldr.AppendLine($"_resiliencyPolicy = resiliencyPolicy;");
+            strbldr.AppendLine($"_reed{value} = reed{value};");
         }
         strbldr.CloseBracket();
         strbldr.NewLine();

@@ -55,7 +55,7 @@ public class ResilientGenerator : ISourceGenerator
             }
             catch (Exception ex)
             {
-                context.LogError("Could not write resilient class: " + ex); // TODO: Proper error code
+                context.LogError("Could not write resilient class: " + ex.ToString().Replace(Environment.NewLine, " / ")); // TODO: Proper error code
             }
         }
     }
@@ -131,10 +131,13 @@ public class ResilientGenerator : ISourceGenerator
             // TODO: Move out
             methodSourceBuilder.ClassSourceBuilder.WithNamespace(userClass.GetNamespace());
             methodSourceBuilder.ClassSourceBuilder.WithName(userClass.Identifier.ToString());
-            methodSourceBuilder.ClassSourceBuilder.AddUsing(policyTypeSymbol.ContainingNamespace.ToString());
-            methodSourceBuilder.ClassSourceBuilder.AddResiliencyPolicy(policyTypeSymbol.Name);
             
-            methodSourceBuilder.WithResiliencyPolicy(policyTypeSymbol.GetWritersForPolicySymbol().ToList());
+            methodSourceBuilder.WithResiliencyPolicy(policyTypeSymbol.ContainingNamespace.ToString() /*Handles multi level namespaces?*/, policyTypeSymbol.Name);
+
+            foreach (var factory in policyTypeSymbol.GetWritersForPolicySymbol())
+            {
+                methodSourceBuilder.AddPolicyFeature(factory);
+            }
 
             methodSourceBuilder.WithArguments(userMethod.ParameterList.Parameters.Select(x => (x.Type.ToString(), x.Identifier.ToString())).ToList());
 

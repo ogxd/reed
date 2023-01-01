@@ -2,24 +2,39 @@ namespace Reed.Generators;
 
 public class ResilientMethodSourceBuilder
 {
+    private static int _idIncr;
+    
     private readonly ResilientClassSourceBuilder _classBuilder;
-    private IList<IPolicySourceWriter> _policyWriters;
+    private List<PolicyFeatureSourceBuilder> _featureSourceBuilders = new();
     private IList<(string argumentType, string argumentName)> _arguments;
     private string _name;
+    private string _policyName;
     private string? _customName;
     private string? _returnType;
     private bool _isAsync;
+    private int _id;
 
     public ResilientClassSourceBuilder ClassSourceBuilder => _classBuilder;
+    public int Id => _id;
     
-    public ResilientMethodSourceBuilder(ResilientClassSourceBuilder classBuilder)
+    internal ResilientMethodSourceBuilder(ResilientClassSourceBuilder classBuilder)
     {
         _classBuilder = classBuilder;
+        _id = Interlocked.Increment(ref _id);
     }
 
-    public ResilientMethodSourceBuilder WithResiliencyPolicy(List<IPolicySourceWriter> policyWriters)
+    public ResilientMethodSourceBuilder WithResiliencyPolicy(string? @namespace, string name)
     {
-        _policyWriters = policyWriters;
+        _policyName = name;
+        ClassSourceBuilder.AddResiliencyPolicy(@namespace, name);
+        return this;
+    }
+
+    public ResilientMethodSourceBuilder AddPolicyFeature<T>(Func<ResilientMethodSourceBuilder, T> ctor)
+        where T : PolicyFeatureSourceBuilder
+    {
+        T methodSourceBuilder = ctor(this);
+        _featureSourceBuilders.Add(methodSourceBuilder);
         return this;
     }
     
@@ -55,9 +70,11 @@ public class ResilientMethodSourceBuilder
     
     public void Build(CsharpStringBuilder strbldr)
     {
-        foreach (var policyWriter in _policyWriters)
+        _featureSourceBuilders = _featureSourceBuilders.OrderBy(x => x.Priority).ToList();
+        
+        foreach (var policyWriter in _featureSourceBuilders)
         {
-            policyWriter.WriteFields(strbldr); // TODO: Handle name collision when multiple resilient methods within a class need the name kind of fields
+            policyWriter.BuildFields(strbldr); // TODO: Handle name collision when multiple resilient methods within a class need the name kind of fields
         }
 
         string customName = string.IsNullOrEmpty(_customName) ? $"{_name}_Resilient" : _customName;
@@ -73,18 +90,20 @@ public class ResilientMethodSourceBuilder
             strbldr.AppendLine($"{_returnType} result = default;");
         }
 
-        foreach (var policyWriter in _policyWriters)
+        strbldr.AppendLine($"var resiliencyPolicy = _reed{_policyName};");
+
+        foreach (var policyWriter in _featureSourceBuilders)
         {
-            policyWriter.WriteBefore(strbldr);
+            policyWriter.BuildBefore(strbldr);
         }
 
         // 2 flavors : Rewrite method OR just call the original method
         //strbldr.AppendLine(userMethod.Body.ToString());
         strbldr.AppendLine($"{(hasReturn ? "result = " : null)}{(_isAsync ? "await " : null)}{_name}({string.Join(", ", _arguments.Select(x => $"{x.argumentName}"))});");
 
-        foreach (var policyWriter in _policyWriters)
+        foreach (var policyWriter in _featureSourceBuilders)
         {
-            policyWriter.WriteAfter(strbldr);
+            policyWriter.BuildAfter(strbldr);
         }
         
         if (hasReturn)

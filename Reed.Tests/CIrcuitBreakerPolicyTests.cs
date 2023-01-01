@@ -12,15 +12,15 @@ public partial class CircuitBreakerPolicyTests
     [SetUp]
     public void Setup()
     {
-        _resiliencyPolicy = new CircuitBreakerPolicy();
-        _circuitBreakerThreshold = 0;
+        _reedICircuitBreakerPolicy = new CircuitBreakerPolicy();
+        _circuitBreakerThreshold1 = 0;
     }
     
     [Test]
     public async Task CircuitBreakerIncrementsOnFailure()
     {
         await InvalidOperation_Resilient();
-        Assert.That(_circuitBreakerThreshold, Is.EqualTo(1));
+        Assert.That(_circuitBreakerThreshold1, Is.EqualTo(1));
     }
     
     [Test]
@@ -31,7 +31,7 @@ public partial class CircuitBreakerPolicyTests
         {
             await InvalidOperation_Resilient();
         }
-        Assert.That(_circuitBreakerThreshold, Is.EqualTo(_resiliencyPolicy.CircuitBreakerFailureThreshold));
+        Assert.That(_circuitBreakerThreshold1, Is.EqualTo(_reedICircuitBreakerPolicy.CircuitBreakerFailureThreshold));
     }
     
     [Test]
@@ -42,16 +42,16 @@ public partial class CircuitBreakerPolicyTests
         {
             await InvalidOperation_Resilient();
         }
-        Assert.That(_circuitBreakerThreshold, Is.EqualTo(_resiliencyPolicy.CircuitBreakerFailureThreshold));
+        Assert.That(_circuitBreakerThreshold1, Is.EqualTo(_reedICircuitBreakerPolicy.CircuitBreakerFailureThreshold));
     }
     
     [Test]
     public void CircuitBreakerDoesNotHandlec()
     {
-        _resiliencyPolicy = new CircuitBreakerPolicy();
+        _reedICircuitBreakerPolicy = new CircuitBreakerPolicy();
         Assert.DoesNotThrowAsync(InvalidOperation_Resilient);
         
-        _resiliencyPolicy = new TimeoutOnlyCircuitBreakerPolicy();
+        _reedICircuitBreakerPolicy = new TimeoutOnlyCircuitBreakerPolicy();
         Assert.ThrowsAsync<InvalidOperationException>(InvalidOperation_Resilient);
     }
     
@@ -60,13 +60,6 @@ public partial class CircuitBreakerPolicyTests
     {
         throw new InvalidOperationException();
     }
-    
-    // TODO: Handle multiple resilient methods per class
-    // [Resilient<ICircuitBreakerPolicy>]
-    // private Task TimeoutOperation()
-    // {
-    //     throw new TimeoutException();
-    // }
 }
 
 public class CircuitBreakerPolicy : ICircuitBreakerPolicy

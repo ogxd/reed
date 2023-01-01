@@ -16,7 +16,7 @@ public partial class CircuitBreakerBenchmark
 
     public CircuitBreakerBenchmark()
     {
-        _resiliencyPolicy = new CircuitBreakerPolicy();
+        _reedICircuitBreakerPolicy = new CircuitBreakerPolicy();
     }
 
     [Benchmark]
@@ -41,7 +41,7 @@ public partial class CircuitBreakerBenchmark
         for (int i = 0; i < Iterations; i++)
         {
             // Hack to make sure Reed circuit breaker is always open
-            _circuitBreakerThreshold = 0;
+            _circuitBreakerThreshold1 = 0;
             await ReedWrapped();
         }
     }

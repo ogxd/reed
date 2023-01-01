@@ -16,7 +16,7 @@ public partial class ExceptionHandlingBenchmark
 
     public ExceptionHandlingBenchmark()
     {
-        _resiliencyPolicy = new ExceptionHandlingPolicy();
+        _reedIExceptionHandlingPolicy = new ExceptionHandlingPolicy();
     }
     
     [Benchmark]
