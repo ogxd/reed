@@ -22,17 +22,41 @@ The idea behind **Reed** is to create a resiliency framework based on source gen
 
 ## Status
 
-For now this is just a proof of concept ;) 
+For now this is just a proof of concept ;)
+
+### Usage
+
+How it currently works is that you define a policy by implementing different features with provided interfaces.    
+For instance, here is a policy that adds 3s timeouts and circuit breakers when too many timeout occurs:    
+```csharp
+public interface IMyCustomPolicy : ICircuitBreakerPolicy, IOptimisticTimeoutPolicy
+{
+}
+
+public class MyCustomPolicy : IMyCustomPolicy
+{
+    public int CircuitBreakerFailureThreshold => 100;
+    
+    public bool IsExceptionHandled(Exception exception)
+    {
+        return exception is TimeoutException;
+    }
+    
+    public TimeSpan OptimisticTimeout => TimeSpan.FromSeconds(3);
+}
+```
+Then you must add the `[Resilient<IMyCustomPolicy>]` to the method you want to make resilient. That will automatically create a new method (with the name of you method with the _Resilient suffix, but you can have a custom name if you want). This new method will be generated with appropriate code to handle timeouts and circuit breaking.    
+You must also make its containing class partial for codegen to work and pass the policy to the new constructor or even better register the policy implementation with dependency injection.
 
 ## Ideas
 
-- [ ] Custom method names
-- [ ] ExceptionHandling
-- [ ] Circuit breaker (lock-free...)
-- [ ] Optimistic timeout
-- [ ] Pessimistic timeout
+- [x] Custom method names
+- [x] Circuit breaker policy (lock-free...)
+- [x] Benchmark against polly
+- [ ] Optimistic timeout policy
+- [ ] Pessimistic timeout policy
+- [ ] Retry policy
 - [ ] Pluggable callback interfaces over unitary policies (eg to monitor circuit breaker)
-- [ ] Benchmark against polly
 
 ## Benchmark
 
