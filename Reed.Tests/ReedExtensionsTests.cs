@@ -29,16 +29,18 @@ public class ReedExtensionsTests
     public async Task DoesNotGetAboveMax()
     {
         int value = 0;
-        const int max = 20_000;
-        var tasks = Enumerable.Range(0, 4).Select(j => Task.Run(async () =>
+        const int parallism = 12;
+        const int iterationsPerThread = 100_000;
+        const int max = parallism * iterationsPerThread / 2;
+        var tasks = Enumerable.Range(0, parallism).Select(j => Task.Run(async () =>
         {
             await Task.Yield();
-            for (int i = 0; i < 10_000; i++)
+            for (int i = 0; i < iterationsPerThread; i++)
             {
                 int valueCopy = value;
                 int incrementedValue = ReedExtensions.IncrementClamped(ref value, max);
                 Assert.LessOrEqual(incrementedValue, max);
-                Assert.GreaterOrEqual(incrementedValue, valueCopy);
+                Assert.GreaterOrEqual(incrementedValue, valueCopy, $"Value was {valueCopy} and is {incrementedValue} after being incremented, which shouldn't be possible");
             }
         }));
 

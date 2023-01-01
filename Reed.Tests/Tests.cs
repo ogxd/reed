@@ -1,4 +1,5 @@
 using NUnit.Framework;
+using Reed.Generators;
 
 namespace Reed;
 
@@ -28,3 +29,7 @@ public partial class ResilientClass
     }
 }
 
+public class Caca : ICaca
+{
+    
+}

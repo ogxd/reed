@@ -10,8 +10,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Reed.Generators\Reed.Generators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-      <ProjectReference Include="..\Reed\Reed.csproj" />
+      <ProjectReference Include="..\Reed\Reed.csproj" OutputItemType="Analyzer" />
     </ItemGroup>
 
     <ItemGroup>

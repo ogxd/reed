@@ -6,7 +6,7 @@ public partial class CircuitBreakerPolicyTests
 {
     public CircuitBreakerPolicyTests()
     {
-        
+
     }
 
     [SetUp]

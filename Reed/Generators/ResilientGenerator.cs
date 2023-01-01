@@ -7,6 +7,11 @@ using Microsoft.CodeAnalysis.Text;
 
 namespace Reed.Generators;
 
+public interface ICaca
+{
+    
+}
+
 [Generator]
 public class ResilientGenerator : ISourceGenerator
 {
