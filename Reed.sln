@@ -9,6 +9,7 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5BAA011F-50B6-4D04-A220-E039E9B65C7E}"
 	ProjectSection(SolutionItems) = preProject
 		README.md = README.md
+		.github\workflows\ci.yml = .github\workflows\ci.yml
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Reed.Benchmarks", "Reed.Benchmarks\Reed.Benchmarks.csproj", "{18EEEB6D-F4D7-4B8A-A99B-12CEE8FC05B8}"

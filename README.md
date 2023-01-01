@@ -1,5 +1,7 @@
 # Reed
 
+![ci workflow](https://github.com/ogxd/reed/actions/workflows/ci.yml/badge.svg)
+
 > "The green reed which bends in the wind is stronger than the mighty oak which breaks in a storm"
 
 ## What is this?
