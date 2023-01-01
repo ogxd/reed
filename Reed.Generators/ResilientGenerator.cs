@@ -1,4 +1,4 @@
-using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -10,6 +10,13 @@ namespace Reed.Generators;
 [Generator]
 public class ResilientGenerator : ISourceGenerator
 {
+    private INamedTypeSymbol? _taskSymbol;
+    private INamedTypeSymbol? _taskTSymbol;
+
+    // Lazy initialized
+    private INamedTypeSymbol? GetTaskSymbol(Compilation compilation) => _taskSymbol ??= compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+    private INamedTypeSymbol? GetTaskTSymbol(Compilation compilation) => _taskTSymbol ??= compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+    
     public void Initialize(GeneratorInitializationContext context)
     {
         // Register a factory that can create our custom syntax receiver
@@ -27,129 +34,138 @@ public class ResilientGenerator : ISourceGenerator
             return;
         }
         
-        foreach (var resilientMethod in syntaxReceiver.ResilientMethods)
+        foreach (var pair in syntaxReceiver.ResilientMethods)
         {
             try
             {
-                WriteResilientImplementation(resilientMethod, context);
+                ResilientClassSourceBuilder classBuilder = new();
+
+                foreach (ResilientMethodSyntax resilientMethodSyntax in pair.Value)
+                {
+                    classBuilder.AddResilientMethod(x => WriteResilientImplementation(x, pair.Key, resilientMethodSyntax, context));
+                }
+
+                CsharpStringBuilder strbldr = new();
+            
+                classBuilder.Build(strbldr);
+
+                // Write generated code
+                SourceText sourceText = SourceText.From(strbldr.ToString(), Encoding.UTF8);
+                context.AddSource($"{classBuilder.FullName}.Reed.cs", sourceText);
             }
             catch (Exception ex)
             {
-                context.LogError(ex.ToString());
-                RscgDebug.WriteLine(ex.ToString());
+                context.LogError("Could not write resilient class: " + ex); // TODO: Proper error code
             }
         }
     }
 
-    private static void WriteResilientImplementation(ResilientMethodSyntax resilientMethodSyntax, GeneratorExecutionContext context)
+    private bool WriteResilientImplementation(ResilientMethodSourceBuilder methodSourceBuilder, ClassDeclarationSyntax userClass, ResilientMethodSyntax resilientMethodSyntax, GeneratorExecutionContext context)
     {
-        // get the recorded user class
-        MethodDeclarationSyntax userMethod = resilientMethodSyntax.MethodDeclarationSyntax;
-
-        if (userMethod.Parent is not ClassDeclarationSyntax userClass)
+        try
         {
-            // if we didn't find the user class, there is nothing to do
-            return;
-        }
-        
-        string? methodName = $"{userMethod.Identifier}_Resilient";
-        
-        // TODO: Use sematic model in more places or make some extension methods
-        SemanticModel methodSemanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.MethodDeclarationSyntax.SyntaxTree);
-        IMethodSymbol? s = methodSemanticModel.GetDeclaredSymbol(resilientMethodSyntax.MethodDeclarationSyntax);
-        
-        foreach (AttributeData attributeData in s.GetAttributes())
-        {
-            if (attributeData.ConstructorArguments.Length == 0)
-                continue;
-            TypedConstant firstArgument = attributeData.ConstructorArguments[0];
-            methodName = firstArgument.Value?.ToString();
-            
-            if (string.IsNullOrEmpty(methodName))
+            if (!userClass.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
             {
-                context.Log0011(resilientMethodSyntax.AttributeSyntax.GetLocation());
-                return;
+                context.LogError($"Class '{userClass.Identifier}' must be partial"); // TODO: Custom error code
+                return false;
             }
+            
+            // get the recorded user class
+            MethodDeclarationSyntax userMethod = resilientMethodSyntax.MethodDeclarationSyntax;
+
+            string? methodName = $"{userMethod.Identifier}_Resilient";
+            
+            // TODO: Use sematic model in more places or make some extension method
+            SemanticModel methodSemanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.MethodDeclarationSyntax.SyntaxTree);
+            IMethodSymbol? methodSymbol = methodSemanticModel.GetDeclaredSymbol(resilientMethodSyntax.MethodDeclarationSyntax);
+            
+            foreach (AttributeData attributeData in methodSymbol.GetAttributes())
+            {
+                if (attributeData.ConstructorArguments.Length == 0)
+                    continue;
+                
+                TypedConstant firstArgument = attributeData.ConstructorArguments[0];
+                methodName = firstArgument.Value?.ToString();
+                
+                if (string.IsNullOrEmpty(methodName))
+                {
+                    context.Log0011(resilientMethodSyntax.AttributeSyntax.GetLocation());
+                    return false;
+                }
+            }
+            
+            if (methodName == userMethod.Identifier.ToString())
+            {
+                context.Log0010(userMethod.GetLocation(), methodName);
+                return false;
+            }
+            
+            methodSourceBuilder.WithName(userMethod.Identifier.ToString());
+            methodSourceBuilder.WithCustomName(methodName);
+            
+            // Retreive generic type
+            SemanticModel semanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.AttributeSyntax.SyntaxTree);
+            INamedTypeSymbol? attributeTypeSymbol = semanticModel.GetTypeInfo(resilientMethodSyntax.AttributeSyntax).ConvertedType as INamedTypeSymbol;
+            ITypeSymbol? policyTypeSymbol = attributeTypeSymbol?.TypeArguments.FirstOrDefault();
+
+            if (policyTypeSymbol == null)
+            {
+                context.LogError("Policy symbol not found");
+                return false;
+            }
+            
+            bool isNonGenericTask = SymbolEqualityComparer.Default.Equals(methodSymbol.ReturnType, GetTaskSymbol(context.Compilation));
+            bool isAwaitable =  isNonGenericTask || SymbolEqualityComparer.Default.Equals(methodSymbol.ReturnType, GetTaskTSymbol(context.Compilation));
+            bool noReturn = methodSymbol.ReturnsVoid || isNonGenericTask;
+
+            if (isAwaitable)
+            {
+                methodSourceBuilder.WithAsync();
+            }
+
+            if (!noReturn)
+            {
+                methodSourceBuilder.WithReturnType(methodSymbol.ReturnType.Name);
+            }
+
+            // TODO: Move out
+            methodSourceBuilder.ClassSourceBuilder.WithNamespace(userClass.GetNamespace());
+            methodSourceBuilder.ClassSourceBuilder.WithName(userClass.Identifier.ToString());
+            methodSourceBuilder.ClassSourceBuilder.AddUsing(policyTypeSymbol.ContainingNamespace.ToString());
+            methodSourceBuilder.ClassSourceBuilder.AddResiliencyPolicy(policyTypeSymbol.Name);
+            
+            methodSourceBuilder.WithResiliencyPolicy(policyTypeSymbol.GetWritersForPolicySymbol().ToList());
+
+            methodSourceBuilder.WithArguments(userMethod.ParameterList.Parameters.Select(x => (x.Type.ToString(), x.Identifier.ToString())).ToList());
+
+            return true;
         }
-        
-        if (methodName == userMethod.Identifier.ToString())
+        catch (Exception ex)
         {
-            context.Log0010(userMethod.GetLocation(), methodName);
-            return;
+            context.LogError("Unhandled exception: " + ex);
+            return false;
         }
-        
-        // Retreive generic type
-        SemanticModel semanticModel = context.Compilation.GetSemanticModel(resilientMethodSyntax.AttributeSyntax.SyntaxTree);
-        INamedTypeSymbol? attributeTypeSymbol = semanticModel.GetTypeInfo(resilientMethodSyntax.AttributeSyntax).ConvertedType as INamedTypeSymbol;
-        ITypeSymbol? policyTypeSymbol = attributeTypeSymbol?.TypeArguments.FirstOrDefault();
-
-        if (policyTypeSymbol == null)
-        {
-            return;
-        }
-
-        CsharpStringBuilder strbldr = new();
-        strbldr.AppendLine("using System;");
-        strbldr.AppendLine("using Microsoft.Extensions.DependencyInjection;"); // ActivatorUtilitiesConstructor's namespace
-        strbldr.AppendLine($"using {policyTypeSymbol.ContainingNamespace};"); // Policy namespace
-        strbldr.NewLine();
-
-        string? @namespace = userClass.GetNamespace();
-        string fullname = userClass.Identifier.ToString();
-
-        if (!string.IsNullOrEmpty(@namespace))
-        {
-            strbldr.AppendLine($"namespace {@namespace};");
-            fullname = @namespace + '.' + fullname;
-        }
-
-        strbldr.NewLine();
-        strbldr.AppendLine($"public partial class {userClass.Identifier}");
-        strbldr.OpenBracket();
-        strbldr.AppendLine($"private {policyTypeSymbol.Name} _resiliencyPolicy;");
-        strbldr.WriteFields(policyTypeSymbol);
-        strbldr.NewLine();
-        
-        strbldr.AppendLine($"[ActivatorUtilitiesConstructor]");
-        strbldr.AppendLine($"public {userClass.Identifier}({policyTypeSymbol.Name} resiliencyPolicy)");
-        strbldr.OpenBracket();
-        strbldr.AppendLine("_resiliencyPolicy = resiliencyPolicy;");
-        strbldr.CloseBracket();
-        strbldr.NewLine();
-        
-        // TODO: Handle all return types (including async)
-        strbldr.AppendLine($"public async Task {methodName}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Type} {x.Identifier}"))})");
-        strbldr.OpenBracket();
-
-        strbldr.WriteBefore(policyTypeSymbol);
-
-        // 2 flavors : Rewrite method OR just call the original method
-        //strbldr.AppendLine(userMethod.Body.ToString());
-        strbldr.AppendLine($"await {userMethod.Identifier}({string.Join(", ", userMethod.ParameterList.Parameters.Select(x => $"{x.Identifier}"))});");
-
-        strbldr.WriteAfter(policyTypeSymbol);
-
-        strbldr.CloseBracket();
-        strbldr.CloseBracket();
-
-        RscgDebug.WriteLine($"Write to {fullname}.Reed.cs");
-        
-        // Write generated code
-        SourceText sourceText = SourceText.From(strbldr.ToString(), Encoding.UTF8);
-        context.AddSource($"{fullname}.Reed.cs", sourceText);
     }
 
     private class ResilientAttributeReceiver : ISyntaxReceiver
     {
-        private readonly List<ResilientMethodSyntax> _resilientMethods = new();
+        private readonly Dictionary<ClassDeclarationSyntax, List<ResilientMethodSyntax>> _resilientMethodsPerClass = new();
 
-        public IReadOnlyList<ResilientMethodSyntax> ResilientMethods => _resilientMethods;
+        public IReadOnlyDictionary<ClassDeclarationSyntax, List<ResilientMethodSyntax>> ResilientMethods => _resilientMethodsPerClass;
 
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
             if (ResilientMethodSyntax.TryGetResilientMethod(syntaxNode, out var resilientMethodSyntax))
             {
-                _resilientMethods.Add(resilientMethodSyntax);
+                if (resilientMethodSyntax.MethodDeclarationSyntax.Parent is ClassDeclarationSyntax userClass)
+                {
+                    ref List<ResilientMethodSyntax> value = ref CollectionsMarshal.GetValueRefOrAddDefault(_resilientMethodsPerClass, userClass, out bool exists)!;
+                    if (!exists)
+                    {
+                        value = new();
+                    }
+                    value.Add(resilientMethodSyntax);
+                }
             }
         }
     }
