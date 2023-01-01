@@ -8,13 +8,17 @@ public partial class CircuitBreakerPolicyTests
     {
         
     }
+
+    [SetUp]
+    public void Setup()
+    {
+        _resiliencyPolicy = new CircuitBreakerPolicy();
+        _circuitBreakerThreshold = 0;
+    }
     
     [Test]
     public async Task CircuitBreakerIncrementsOnFailure()
     {
-        _resiliencyPolicy = new CircuitBreakerPolicy();
-        
-        Assert.That(_circuitBreakerThreshold, Is.EqualTo(0));
         await InvalidOperation_Resilient();
         Assert.That(_circuitBreakerThreshold, Is.EqualTo(1));
     }
@@ -22,8 +26,6 @@ public partial class CircuitBreakerPolicyTests
     [Test]
     public async Task CircuitBreakerIncrementsUpToMaximumThreshold()
     {
-        _resiliencyPolicy = new CircuitBreakerPolicy();
-        
         // We run many iterations because the circuit breaker increasingly throttle the call
         for (int i = 0; i < 100_000; i++)
         {
@@ -35,8 +37,6 @@ public partial class CircuitBreakerPolicyTests
     [Test]
     public async Task CircuitBreakerDoesNotHandle()
     {
-        _resiliencyPolicy = new CircuitBreakerPolicy();
-        
         // We run many iterations because the circuit breaker increasingly throttle the call
         for (int i = 0; i < 100_000; i++)
         {
