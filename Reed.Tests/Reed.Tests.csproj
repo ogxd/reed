@@ -7,7 +7,7 @@
         <IsPackable>false</IsPackable>
         <RootNamespace>Reed</RootNamespace>
         <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
-        <LangVersion>latest</LangVersion>
+        <LangVersion>preview</LangVersion>
     </PropertyGroup>
 
     <ItemGroup>
