@@ -2,28 +2,27 @@ namespace Reed.Generators;
 
 public class ExceptionHandlingPolicySourceBuilder : PolicyFeatureSourceBuilder
 {
-    public override int Priority { get; }
+    public override int Priority => 0;
     
     public ExceptionHandlingPolicySourceBuilder(ResilientMethodSourceBuilder methodBuilder) : base(methodBuilder)
     {
     }
     
-    public override void BuildFields(CsharpStringBuilder strbldr)
-    {   
-    }
-    
-    public override void BuildBefore(CsharpStringBuilder strbldr)
+    public override void BuildOnTry(CsharpStringBuilder strbldr)
     {
         strbldr.AppendLine("try");
         strbldr.OpenBracket();
     }
 
-    public override void BuildAfter(CsharpStringBuilder strbldr)
+    public override void BuildOnHandleException(CsharpStringBuilder strbldr)
     {
         strbldr.CloseBracket();
-        strbldr.AppendLine("catch (Exception ex)");
+        strbldr.AppendLine("catch (Exception exception) when (resiliencyPolicy.IsExceptionHandled(exception))");
         strbldr.OpenBracket();
-        strbldr.NewLine();
+    }
+    
+    public override void BuildEnd(CsharpStringBuilder strbldr)
+    {
         strbldr.CloseBracket();
     }
 }

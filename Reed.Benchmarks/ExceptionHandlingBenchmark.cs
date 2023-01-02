@@ -20,7 +20,7 @@ public partial class ExceptionHandlingBenchmark
     }
     
     [Benchmark]
-    public async Task Polly()
+    public async Task PollyMany()
     {
         for (int i = 0; i < Iterations; i++)
         {
@@ -29,21 +29,21 @@ public partial class ExceptionHandlingBenchmark
     }
     
     [Benchmark]
-    public async Task Reed()
+    public async Task ReedMany()
     {
         for (int i = 0; i < Iterations; i++)
         {
-            await ReedInternal_Resilient();
+            await Reed();
         }
     }
     
-    [Resilient<IExceptionHandlingPolicy>]
-    public Task ReedInternal()
+    [Resilient<IExceptionHandlingPolicy>("Reed")]
+    private Task ReedInternal()
     {
         return MyTask();
     }
     
-    public Task MyTask()
+    private Task MyTask()
     {
         throw new TaskCanceledException();
     }
@@ -51,5 +51,9 @@ public partial class ExceptionHandlingBenchmark
 
 public class ExceptionHandlingPolicy : IExceptionHandlingPolicy
 {
-    public bool HandleAllExceptions => true;
+    public bool IsExceptionHandled(Exception exception)
+    {
+        // Handle all exceptions
+        return true;
+    }
 }

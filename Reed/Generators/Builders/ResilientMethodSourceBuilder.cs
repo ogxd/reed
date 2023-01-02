@@ -91,21 +91,46 @@ public class ResilientMethodSourceBuilder
         }
 
         strbldr.AppendLine($"var resiliencyPolicy = _reed{_policyName};");
+        strbldr.NewLine();
 
         foreach (var policyWriter in _featureSourceBuilders)
         {
-            policyWriter.BuildBefore(strbldr);
+            policyWriter.BuildStart(strbldr);
+        }
+        foreach (var policyWriter in _featureSourceBuilders)
+        {
+            policyWriter.BuildOnTry(strbldr);
+        }
+        foreach (var policyWriter in _featureSourceBuilders)
+        {
+            policyWriter.BuildBeforeCall(strbldr);
         }
 
         // 2 flavors : Rewrite method OR just call the original method
         //strbldr.AppendLine(userMethod.Body.ToString());
         strbldr.AppendLine($"{(hasReturn ? "result = " : null)}{(_isAsync ? "await " : null)}{_name}({string.Join(", ", _arguments.Select(x => $"{x.argumentName}"))});");
 
+        // After the wrapped method is called, source for each policy is written in reverse order of priority (unscoping)
+        // TBH this BuildXXX kind of sucks atm
+        _featureSourceBuilders.Reverse();
+        
         foreach (var policyWriter in _featureSourceBuilders)
         {
-            policyWriter.BuildAfter(strbldr);
+            policyWriter.BuildAfterCall(strbldr);
         }
-        
+        foreach (var policyWriter in _featureSourceBuilders)
+        {
+            policyWriter.BuildOnHandleException(strbldr);
+        }
+        foreach (var policyWriter in _featureSourceBuilders)
+        {
+            policyWriter.BuildOnExceptionHandled(strbldr);
+        }
+        foreach (var policyWriter in _featureSourceBuilders)
+        {
+            policyWriter.BuildEnd(strbldr);
+        }
+
         if (hasReturn)
         {
             strbldr.AppendLine($"return result;");

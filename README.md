@@ -55,7 +55,7 @@ You must also make its containing class partial for codegen to work and pass the
 - [x] Benchmark against polly
 - [ ] Optimistic timeout policy
 - [ ] Pessimistic timeout policy
-- [ ] Retry policy
+- [x] Retry policy
 - [ ] Pluggable callback interfaces over unitary policies (eg to monitor circuit breaker)
 
 ## Benchmark

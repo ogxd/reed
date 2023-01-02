@@ -1,7 +1,6 @@
 namespace Reed;
 
-public interface ICircuitBreakerPolicy : IResiliencyPolicy
+public interface ICircuitBreakerPolicy : IExceptionHandlingPolicy
 {
     int CircuitBreakerFailureThreshold { get; }
-    bool IsExceptionHandled(Exception exception);
 }

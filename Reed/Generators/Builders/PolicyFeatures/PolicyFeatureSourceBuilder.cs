@@ -11,9 +11,18 @@ public abstract class PolicyFeatureSourceBuilder
         _methodBuilder = methodBuilder;
     }
 
-    public abstract void BuildFields(CsharpStringBuilder strbldr);
-    public abstract void BuildBefore(CsharpStringBuilder strbldr);
-    public abstract void BuildAfter(CsharpStringBuilder strbldr);
+    public virtual void BuildFields(CsharpStringBuilder strbldr) {}
+
+    public virtual void BuildStart(CsharpStringBuilder strbldr) {}
+    public virtual void BuildOnTry(CsharpStringBuilder strbldr) {}
+
+    public virtual void BuildBeforeCall(CsharpStringBuilder strbldr) {}
+    public virtual void BuildAfterCall(CsharpStringBuilder strbldr) {}
+
+    public virtual void BuildOnHandleException(CsharpStringBuilder strbldr) {}
+    public virtual void BuildOnExceptionHandled(CsharpStringBuilder strbldr) {}
+    
+    public virtual void BuildEnd(CsharpStringBuilder strbldr) {}
     
     public abstract int Priority { get; }
 }
