@@ -10,7 +10,7 @@ public class RetryPolicySourceBuilder : PolicyFeatureSourceBuilder
     
     public override void BuildStart(CsharpStringBuilder strbldr)
     {
-        strbldr.AppendLine("int attempt = 1;");
+        strbldr.AppendLine("int attempt = 0;");
         strbldr.AppendLine("retry:;");
     }
 

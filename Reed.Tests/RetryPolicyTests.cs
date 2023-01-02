@@ -17,7 +17,7 @@ public partial class RetryPolicyTests
     {
         Assert.That(_countedAttempts, Is.EqualTo(0));
         await InvalidOperation_Resilient();
-        Assert.That(_countedAttempts, Is.EqualTo(2));
+        Assert.That(_countedAttempts, Is.EqualTo(_reedRetryPolicy.RetryAttempts + 1)); // Retries + Initial attempt
     }
     
     [Resilient<RetryPolicy>]

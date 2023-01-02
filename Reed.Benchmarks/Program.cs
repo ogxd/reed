@@ -5,6 +5,7 @@ AppDomain.MonitoringIsEnabled = true;
 
 var switcher = new BenchmarkSwitcher(new[] {
     typeof(ExceptionHandlingBenchmark),
+    typeof(CompositePolicyBenchmark),
     typeof(CircuitBreakerBenchmark),
 });
 
